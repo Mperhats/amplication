@@ -1,4 +1,8 @@
-import { DSGResourceData, Module } from "@amplication/code-gen-types";
+import {
+  DSGResourceData,
+  Module,
+  ModuleMap,
+} from "@amplication/code-gen-types";
 import normalize from "normalize-path";
 import { createAdminModules } from "./admin/create-admin";
 import DsgContext from "./dsg-context";
@@ -16,7 +20,7 @@ export async function createDataService(
   try {
     if (dSGResourceData.resourceType === EnumResourceType.MessageBroker) {
       logger.info("No code to generate for a message broker");
-      return [];
+      return null;
     }
 
     const startTime = Date.now();
@@ -37,21 +41,22 @@ export async function createDataService(
     const { generateAdminUI } = adminUISettings;
 
     const adminUIModules =
-      (generateAdminUI && (await createAdminModules())) || [];
+      (generateAdminUI && (await createAdminModules())) || new ModuleMap();
 
-    // Use concat for the best performance (https://jsbench.me/o8kqzo8olz/1)
-    const modules = serverModules.concat(adminUIModules);
+    const modules = serverModules;
+    modules.merge(adminUIModules, logger);
+
+    // This code normalizes the path of each module to always use Unix path separator.
+    modules.forEach((module) => {
+      module.path = normalize(module.path);
+    });
 
     const endTime = Date.now();
     logger.info("Application creation time", {
       durationInMs: endTime - startTime,
     });
 
-    /** @todo make module paths to always use Unix path separator */
-    return modules.map((module) => ({
-      ...module,
-      path: normalize(module.path),
-    }));
+    return Array.from(modules.values());
   } catch (error) {
     await context.logger.error("Failed to run createDataService", {
       ...error,
