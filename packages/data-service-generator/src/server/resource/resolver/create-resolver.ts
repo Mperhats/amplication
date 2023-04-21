@@ -121,20 +121,18 @@ export async function createResolverModules(
     ),
   };
 
-  return new ModuleMap([
-    ...(await pluginWrapper(
-      createResolverModule,
-      EventNames.CreateEntityResolver,
-      {
-        template,
-        entityName,
-        entityServiceModule,
-        serviceId,
-        resolverBaseId,
-        templateMapping,
-      }
-    )),
-    ...(await pluginWrapper(
+  const context = DsgContext.getInstance;
+  const moduleMap = new ModuleMap(context.logger);
+  await moduleMap.mergeMany([
+    await pluginWrapper(createResolverModule, EventNames.CreateEntityResolver, {
+      template,
+      entityName,
+      entityServiceModule,
+      serviceId,
+      resolverBaseId,
+      templateMapping,
+    }),
+    await pluginWrapper(
       createResolverBaseModule,
       EventNames.CreateEntityResolverBase,
       {
@@ -152,8 +150,10 @@ export async function createResolverModules(
         updateMutationId,
         templateMapping,
       }
-    )),
+    ),
   ]);
+
+  return moduleMap;
 }
 
 async function createResolverModule({
@@ -206,7 +206,10 @@ async function createResolverModule({
     path: modulePath,
     code: print(template).code,
   };
-  return new ModuleMap([[module.path, module]]);
+  const context = DsgContext.getInstance;
+  const moduleMap = new ModuleMap(context.logger);
+  await moduleMap.set(module.path, module);
+  return moduleMap;
 }
 
 async function createResolverBaseModule({
@@ -338,7 +341,10 @@ async function createResolverBaseModule({
     path: moduleBasePath,
     code: print(template).code,
   };
-  return new ModuleMap([[module.path, module]]);
+  const context = DsgContext.getInstance;
+  const moduleMap = new ModuleMap(context.logger);
+  await moduleMap.set(module.path, module);
+  return moduleMap;
 }
 
 export function createResolverId(entityType: string): namedTypes.Identifier {
@@ -409,7 +415,7 @@ async function createToOneRelationMethodsInternal(
   );
 
   eventParams.methods = getMethods(classDeclaration);
-  return new ModuleMap();
+  return new ModuleMap(DsgContext.getInstance.logger);
 }
 
 async function createToManyRelationMethods(
@@ -470,5 +476,5 @@ async function createToManyRelationMethodsInternal(
   );
 
   eventParams.methods = getMethods(classDeclaration);
-  return new ModuleMap();
+  return new ModuleMap(DsgContext.getInstance.logger);
 }
