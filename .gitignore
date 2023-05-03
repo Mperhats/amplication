@@ -67,3 +67,7 @@ src/schema.graphql
 .nx-container/
 
 **/prisma/migrations/dev/
+schema.graphql
+packages/amplication-server/.env
+packages/amplication-git-pull-request-service/.env
+package-lock.json
