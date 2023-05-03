@@ -131,7 +131,15 @@ Follow these simple instructions to set up a local development environment.
     > ℹ️ Please note that in order to be able to run the app's client properly, you need to `serve` both the server and client plus any additional component for specific functionalities:
 
 
+6. To create a backup of the local docker database container during schema build:
+```
+docker exec -t your-db-container pg_dumpall -c -U admin > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
+```
 
+7. To inject the backup data into the container:
+```
+cat your_dump.sql | docker exec -i your-db-container psql -U admin
+```
 
 **That's it, you are good to go! Happy hacking! 👾**
 
